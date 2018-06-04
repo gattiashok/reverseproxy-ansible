@@ -1,0 +1,45 @@
+---
+# tasks file for httpd
+
+# installing httpd ,httpd-devel packages
+- yum: state=present name={{ item }}
+  with_items:
+   - httpd
+   - httpd-devel
+
+# copying http.conf.j2 file
+
+- template:
+    src: httpd.conf.j2
+    dest: /etc/httpd/conf/httpd.conf
+   # mode: 0644
+
+- command: "{{ item }}"
+  with_items:
+    - apachectl configtest
+
+- name: Start service httpd, if not running
+  service:
+    name: httpd
+    state: started
+
+- name: Enable service httpd, and not touch the running state
+  service:
+    name: httpd
+    enabled: yes
+
+- name: install the latest version of firewalld
+  yum:
+    name: firewalld
+    state: latest
+
+- command: "{{ item }}"
+  with_items:
+    - systemctl start firewalld
+    - firewall-cmd --permanent --add-port=80/tcp
+    - firewall-cmd --permanent --add-port=8080/tcp
+    - firewall-cmd --permanent --zone=public --add-service=http
+    - firewall-cmd --permanent --zone=public --add-service=https
+    - firewall-cmd --reload
+
+

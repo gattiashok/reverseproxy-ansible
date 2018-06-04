@@ -1,0 +1,90 @@
+---
+# tasks file for nginx
+# this role is specifickly for nginx
+- name: install the latest version of nginx
+  yum:
+    name: nginx
+    state: latest
+
+- name: Create a new file
+  file: path=/etc/nginx/conf.d/demo.conf state=touch
+
+- template:
+    src: demo.conf.j2
+    dest: /etc/nginx/conf.d/demo.conf
+    #mode: 0644
+
+- name: running nginx -t command
+  command: nginx -t
+
+- name: Start service httpd, if not running
+  service:
+    name: nginx
+    state: started
+
+- name: Enable service httpd, and not touch the running state
+  service:
+    name: nginx
+    enabled: yes
+
+- command: "{{ item }}"
+  with_items:
+    - yum install make gcc automake zlib-devel bison cmake libtool wget gcc-c++ unzip ncurses-devel openssl-devel pcre-devel libxml2-devel curl-devel gd-devel libxslt- devel libjpeg-devel -y
+
+- name: Download mod_rpaf-0.6.tar.gz
+  get_url:
+    url: http://mirror.trouble-free.net/sources/mod_rpaf-0.6.tar.gz
+    dest: /root/
+
+- name: Unarchive mod_rpaf-0.6.tar.gz a file that is already on the remote machine
+  unarchive:
+    src: /root/mod_rpaf-0.6.tar.gz
+    dest: /root/
+    remote_src: yes
+
+- name: example copying file with owner and permissions
+  copy:
+    src: mod_rpaf-2.4.c
+    dest: /root/mod_rpaf-0.6/
+
+
+- replace:
+      dest: /root/mod_rpaf-0.6/mod_rpaf-2.4.c
+      regexp: "'s/remote_/client_/g' mod_rpaf-2.4.c"
+
+- replace:
+      dest: /root/mod_rpaf-0.6/mod_rpaf-2.4.c
+      regexp: apxs -c -n mod_rpaf-2.4.so mod_rpaf-2.4.c
+
+
+- replace:
+      dest: /root/mod_rpaf-0.6/mod_rpaf-2.4.c
+      regexp: apxs -i -c -n mod_rpaf-2.4.so mod_rpaf-2.4.c
+
+- name: Create a new file at /etc/httpd/conf.d/ location
+  file: path=/etc/httpd/conf.d/mod_rpaf.conf state=touch
+
+- template:
+    src: mod_rpaf.conf.j2
+    dest: /etc/httpd/conf.d/mod_rpaf.conf
+   # mode: 0644
+
+- name: Create a new file
+  file: path=/var/www/html/info.php state=touch
+
+- template:
+    src: info.php.j2
+    dest: /var/www/html/info.php
+    #mode: 0644
+
+  notify:
+  - restart httpd
+
+- name: Enable service httpd, and not touch the running state
+  service:
+    name: httpd
+    enabled: yes
+
+- name: executing nginx restart session
+  command: systemctl restart nginx
+

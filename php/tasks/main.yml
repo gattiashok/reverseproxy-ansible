@@ -1,0 +1,7 @@
+---
+# tasks file for php
+
+
+- name: installing php7 using remi package
+  command: yum --enablerepo=remi-php72 install php -y  warn=False
+
